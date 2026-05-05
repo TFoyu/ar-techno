@@ -249,7 +249,7 @@
   margin-left: 260px;
   padding: 24px;
   overflow-y: auto;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .admin-page-header {
