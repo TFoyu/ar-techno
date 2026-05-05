@@ -16,7 +16,7 @@ export async function GET() {
 
     // Add SSL for cloud databases
     if (process.env.DB_SSL === 'true') {
-      connectionConfig.ssl = { rejectUnauthorized: true };
+      connectionConfig.ssl = { rejectUnauthorized: false };
     }
 
     const connection = await mysql.createConnection(connectionConfig);
