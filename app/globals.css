@@ -264,8 +264,8 @@ html, body {
 /* Point markers on frame - invisible tap areas (functional but no visual) */
 .point-marker-invisible {
   position: absolute;
-  width: 44px;
-  height: 44px;
+  width: 70px;
+  height: 70px;
   transform: translate(-50%, -50%);
   z-index: 5;
   cursor: pointer;
