@@ -364,30 +364,53 @@ export default function VisitorPage() {
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
     const frameCanvas = frameCanvasRef.current;
-    if (!video || !frameCanvas) return;
+    const viewport = viewportRef.current;
+    if (!video || !frameCanvas || !viewport) return;
 
     // Flash effect
     setShowFlash(true);
     setTimeout(() => setShowFlash(false), 300);
 
-    // Create capture canvas
+    // Calculate the visible crop region to match object-fit: cover
+    // The viewport has aspect-ratio 3:4, video may have different ratio
+    const vpRect = viewport.getBoundingClientRect();
+    const vpAspect = vpRect.width / vpRect.height; // 3:4 = 0.75
+    const vidAspect = video.videoWidth / video.videoHeight;
+
+    let srcX, srcY, srcW, srcH;
+    if (vidAspect > vpAspect) {
+      // Video is wider than viewport — crop sides
+      srcH = video.videoHeight;
+      srcW = srcH * vpAspect;
+      srcX = (video.videoWidth - srcW) / 2;
+      srcY = 0;
+    } else {
+      // Video is taller than viewport — crop top/bottom
+      srcW = video.videoWidth;
+      srcH = srcW / vpAspect;
+      srcX = 0;
+      srcY = (video.videoHeight - srcH) / 2;
+    }
+
+    // Output canvas at the cropped size
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = Math.round(srcW);
+    canvas.height = Math.round(srcH);
     const ctx = canvas.getContext('2d');
 
-    // Draw video (mirror if front camera)
+    // Draw the cropped video region (mirror if front camera)
     if (useFrontCamera) {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height);
 
     // Reset transform
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // Draw frame overlay
-    ctx.drawImage(frameCanvas, 0, 0, canvas.width, canvas.height);
+    // Draw frame overlay — also crop the same region from the frame canvas
+    // frameCanvas has the same internal resolution as video (videoWidth x videoHeight)
+    ctx.drawImage(frameCanvas, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height);
 
     // Download
     canvas.toBlob((blob) => {
